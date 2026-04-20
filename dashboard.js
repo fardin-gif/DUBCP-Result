@@ -1,8 +1,3 @@
-// =============================================
-//  DU BUS COMMUTE — DASHBOARD.JS
-//  Firebase → Charts, Filters, Table, Export
-// =============================================
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
@@ -85,10 +80,6 @@ function showLoading(show) {
     .classList.toggle("hidden", !show);
 }
 
-// =============================================
-//  POPULATE ROUTE FILTER DYNAMICALLY
-// =============================================
-
 function populateRouteFilter() {
   const sel = document.getElementById("f-route");
   const current = sel.value;
@@ -104,10 +95,6 @@ function populateRouteFilter() {
   });
   sel.value = current;
 }
-
-// =============================================
-//  FILTERS
-// =============================================
 
 window.applyFilters = function () {
   const fRoute    = document.getElementById("f-route").value;
@@ -140,10 +127,6 @@ window.clearFilters = function () {
   applyFilters();
 };
 
-// =============================================
-//  RENDER ALL
-// =============================================
-
 function renderAll() {
   renderKPIs();
   renderBarChart("chart-route",    countBy(filtered, "route"),        true);
@@ -159,10 +142,6 @@ function renderAll() {
   renderSuggestions();
   renderTable();
 }
-
-// =============================================
-//  KPIs
-// =============================================
 
 function renderKPIs() {
   const total     = filtered.length;
@@ -200,10 +179,6 @@ function animateCount(id, target) {
   requestAnimationFrame(step);
 }
 
-// =============================================
-//  BAR CHART
-// =============================================
-
 function renderBarChart(containerId, counts, sorted) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -238,10 +213,6 @@ function renderBarChart(containerId, counts, sorted) {
     });
   });
 }
-
-// =============================================
-//  DONUT CHART (pure canvas)
-// =============================================
 
 function renderDonut(canvasId, legendId, counts) {
   const canvas = document.getElementById(canvasId);
@@ -312,10 +283,6 @@ function renderDonut(canvasId, legendId, counts) {
   }).join("");
 }
 
-// =============================================
-//  SCALE CHART (1–5)
-// =============================================
-
 function renderScaleChart(containerId, avgId, data, field, label) {
   const container = document.getElementById(containerId);
   const avgEl     = document.getElementById(avgId);
@@ -360,10 +327,6 @@ function renderScaleChart(containerId, avgId, data, field, label) {
     : `No data yet`;
 }
 
-// =============================================
-//  EARLY ACCESS CONTACTS
-// =============================================
-
 function renderEarlyAccess() {
   const earlyUsers = filtered.filter(d => d.early_access);
   const el = document.getElementById("early-stats");
@@ -398,7 +361,6 @@ function renderEarlyAccess() {
     </div>
   `;
 
-  // Contact list
   if (earlyUsers.length) {
     const listHtml = `
       <div style="margin-top:1.25rem;">
@@ -409,7 +371,7 @@ function renderEarlyAccess() {
               <span class="ec-name">${d.name || "—"}</span>
               <span class="ec-session">${d.session || "—"}</span>
               <span class="ec-contact ${d.contact_method === 'WhatsApp' ? 'contact-wa' : 'contact-msg'}">
-                ${d.contact_method === "WhatsApp" ? "📱 " + d.whatsapp : "💬 " + d.messenger}
+                ${d.contact_method === "WhatsApp" ? " " + d.whatsapp : " " + d.messenger}
               </span>
             </div>
           `).join("")}
@@ -419,10 +381,6 @@ function renderEarlyAccess() {
     el.insertAdjacentHTML("beforeend", listHtml);
   }
 }
-
-// =============================================
-//  PRODUCT SUGGESTIONS
-// =============================================
 
 function renderSuggestions() {
   const el = document.getElementById("suggestions-wrap");
@@ -441,10 +399,6 @@ function renderSuggestions() {
     `<span class="suggestion-tag">${s}</span>`
   ).join("");
 }
-
-// =============================================
-//  TABLE
-// =============================================
 
 window.renderTable = function () {
   const search = (document.getElementById("table-search")?.value || "").toLowerCase();
@@ -500,10 +454,6 @@ window.renderTable = function () {
   footer.textContent = `Showing ${rows.length} response${rows.length !== 1 ? "s" : ""}`;
 };
 
-// =============================================
-//  EXPORT CSV
-// =============================================
-
 window.exportCSV = function () {
   const headers = [
     "Timestamp","Route","Stoppage","Commute Time","Physical Issue",
@@ -537,10 +487,6 @@ window.exportCSV = function () {
   URL.revokeObjectURL(url);
 };
 
-// =============================================
-//  HELPERS
-// =============================================
-
 function countBy(arr, key) {
   return arr.reduce((acc, d) => {
     const v = d[key];
@@ -557,11 +503,6 @@ function formatDate(date) {
     hour: "2-digit", minute: "2-digit"
   });
 }
-
-// =============================================
-//  INIT
-// =============================================
-
 document.addEventListener("DOMContentLoaded", () => {
   loadData();
 });
