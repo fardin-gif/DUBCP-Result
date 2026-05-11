@@ -1,233 +1,311 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>DU BUS Commute · Analytics Hub</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --bg: #080808;
-      --bg-1: #101010;
-      --bg-2: #161616;
-      --bg-3: #1e1e1e;
-      --bg-4: #252525;
-      --accent: #e53935;
-      --accent-2: #ff6f6f;
-      --accent-3: rgba(229,57,53,0.12);
-      --green: #4caf50;
-      --blue: #2196f3;
-      --yellow: #ffc107;
-      --purple: #9c27b0;
-      --teal: #009688;
-      --orange: #ff5722;
-      --text-1: #f0f0f0;
-      --text-2: #a0a0a0;
-      --text-3: #555;
-      --border: #222;
-      --border-2: #2e2e2e;
-      --radius: 12px;
-      --radius-sm: 8px;
-      --shadow: 0 4px 32px rgba(0,0,0,0.7);
-      --font: 'Syne', sans-serif;
-      --font-bn: 'Hind Siliguri', sans-serif;
-      --transition: 0.2s ease;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text-1);
-      font-family: var(--font);
-      min-height: 100vh;
-      line-height: 1.5;
-    }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(8,8,8,0.92);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2rem;
-      height: 56px;
-    }
-
-    .topbar-left { display: flex; align-items: center; gap: 1.25rem; }
-    .topbar-logo { display: flex; align-items: center; gap: 8px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-    .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{box-shadow:0 0 8px var(--accent);}50%{box-shadow:0 0 18px var(--accent);} }
-    .topbar-sub { font-size: 0.75rem; color: var(--text-3); border-left: 1px solid var(--border-2); padding-left: 1.25rem; }
-    .btn-refresh { display: flex; align-items: center; gap: 6px; background: var(--bg-3); border: 1px solid var(--border-2); padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); font-weight: 600; }
-    .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
-    .loading-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; transition: opacity 0.4s; }
-    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border-2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .dashboard { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem 4rem; display: flex; flex-direction: column; gap: 1.5rem; }
-    .kpi-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 1rem; }
-    .kpi-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: var(--transition); }
-    .kpi-value { font-size: 1.8rem; font-weight: 800; line-height: 1; }
-    .kpi-label { font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 4px; }
-    .filter-bar { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
-    .filters { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
-    .filter-group { display: flex; flex-direction: column; gap: 5px; }
-    .filter-group select { background: var(--bg-3); border: 1px solid var(--border-2); border-radius: var(--radius-sm); color: var(--text-1); padding: 7px 28px 7px 10px; font-family: var(--font); cursor: pointer; min-width: 150px; }
-    .btn-clear-filters { background: transparent; border: 1px solid var(--border-2); padding: 7px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 5px; align-self: flex-end; }
-    .btn-clear-filters:hover { border-color: var(--accent); color: var(--accent); }
-    .charts-grid-2, .charts-grid-3 { display: grid; gap: 1.5rem; }
-    .charts-grid-2 { grid-template-columns: 1fr 1fr; }
-    .charts-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-    .chart-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; position: relative; }
-    .chart-card::before { content: ''; position: absolute; top:0; left:0; right:0; height:2px; background: linear-gradient(90deg, var(--accent), transparent); }
-    .chart-header { display: flex; justify-content: space-between; margin-bottom: 1.25rem; align-items: center; }
-    .chart-title { font-weight: 700; font-size: 0.9rem; }
-    .chart-badge { font-size: 0.65rem; background: var(--accent-3); border: 1px solid rgba(229,57,53,0.2); padding: 3px 10px; border-radius: 100px; color: var(--accent); }
-    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
-    .bar-row { display: grid; grid-template-columns: 140px 1fr 48px; gap: 10px; align-items: center; }
-    .bar-track { height: 24px; background: var(--bg-4); border-radius: 4px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.7s cubic-bezier(0.2,0.9,0.4,1.1); display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; min-width: 24px; }
-    .bar-pct { font-size: 0.65rem; font-weight: 700; color: white; }
-    .donut-wrap { display: flex; align-items: center; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-    .donut-legend { display: flex; flex-direction: column; gap: 6px; }
-    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
-    .scale-chart { display: flex; gap: 8px; align-items: flex-end; height: 120px; margin-bottom: 0.75rem; }
-    .scale-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; }
-    .scale-bar-wrap { width: 100%; background: var(--bg-4); border-radius: 6px 6px 0 0; flex: 1; position: relative; }
-    .scale-bar { width: 100%; position: absolute; bottom: 0; border-radius: 6px 6px 0 0; transition: height 0.6s; }
-    .early-stats { display: flex; flex-direction: column; gap: 1.5rem; }
-    .early-contact-list { display: flex; flex-direction: column; gap: 10px; margin-top: 1rem; }
-    .early-contact-item { background: var(--bg-3); border: 1px solid var(--border-2); border-radius: var(--radius-sm); padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
-    .ec-info { display: flex; gap: 1rem; flex-wrap: wrap; align-items: baseline; }
-    .ec-name { font-weight: 700; color: var(--text-1); }
-    .ec-session { font-size: 0.75rem; color: var(--text-3); }
-    .ec-contact { font-family: monospace; font-size: 0.75rem; background: var(--bg-4); padding: 2px 6px; border-radius: 20px; }
-    .contact-wa { color: #25d366; }
-    .contact-msg { color: #1877f2; }
-    .btn-message { background: transparent; border: 1px solid var(--accent); color: var(--accent); border-radius: 30px; padding: 5px 12px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
-    .btn-message:hover { background: var(--accent); color: white; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 1000; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; }
-    .modal-overlay.active { visibility: visible; opacity: 1; }
-    .message-modal { background: var(--bg-2); border: 1px solid var(--border-2); border-radius: 20px; max-width: 500px; width: 90%; padding: 1.8rem; box-shadow: var(--shadow); }
-    .message-modal h3 { margin-bottom: 1rem; font-size: 1.2rem; }
-    .message-modal textarea { width: 100%; background: var(--bg-3); border: 1px solid var(--border); color: var(--text-1); padding: 12px; border-radius: 12px; font-family: var(--font-bn); margin: 1rem 0; resize: vertical; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
-    .modal-actions button { padding: 8px 18px; border-radius: 30px; border: none; cursor: pointer; font-weight: 600; }
-    .btn-done { background: var(--accent); color: white; }
-    .btn-cancel { background: var(--bg-4); color: var(--text-2); }
-    .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-    .data-table th { background: var(--bg-3); padding: 10px 8px; text-align: left; color: var(--text-3); }
-    .data-table td { padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-2); }
-    .search-input { background: var(--bg-3); border: 1px solid var(--border-2); padding: 7px 12px; border-radius: var(--radius-sm); color: white; margin-right: 12px; }
-    .btn-export { background: var(--bg-3); border: 1px solid var(--border-2); padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; }
-    @media (max-width: 768px) { .kpi-row { grid-template-columns: repeat(2,1fr); } .charts-grid-2, .charts-grid-3 { grid-template-columns: 1fr; } .bar-row { grid-template-columns: 100px 1fr 40px; } }
-    .suggestions-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
-    .suggestion-tag { background: var(--bg-3); border-radius: 40px; padding: 6px 14px; font-size: 0.8rem; }
-  </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DU BUS Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="dashboard.css"/>
 </head>
 <body>
-<header class="topbar"><div class="topbar-left"><div class="topbar-logo"><span class="logo-dot"></span>DU BUS</div><span class="topbar-sub">Commute Project — Response Dashboard</span></div><div class="topbar-right"><div class="last-refresh" id="last-refresh">—</div><button class="btn-refresh" id="btn-refresh" onclick="window.loadData?.()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Refresh</button></div></header>
-<div class="loading-overlay" id="loading-overlay"><div class="loading-spinner"></div><div class="loading-text">Loading responses…</div></div>
-<main class="dashboard" id="dashboard">
-  <section class="kpi-row" id="kpi-row">
-    <div class="kpi-card"><div class="kpi-body"><div class="kpi-value" id="kv-total">—</div><div class="kpi-label">Total Responses</div></div></div>
-    <div class="kpi-card"><div class="kpi-body"><div class="kpi-value" id="kv-early">—</div><div class="kpi-label">Early Access Partners</div></div></div>
-    <div class="kpi-card"><div class="kpi-body"><div class="kpi-value" id="kv-whatsapp">—</div><div class="kpi-label">WhatsApp Contacts</div></div></div>
-    <div class="kpi-card"><div class="kpi-body"><div class="kpi-value" id="kv-messenger">—</div><div class="kpi-label">Messenger Contacts</div></div></div>
-    <div class="kpi-card"><div class="kpi-body"><div class="kpi-value" id="kv-physical">—</div><div class="kpi-label">Report Physical Issues</div></div></div>
-    <div class="kpi-card"><div class="kpi-body"><div class="kpi-value" id="kv-energy">—</div><div class="kpi-label">Avg Energy Impact</div></div></div>
-  </section>
-  <section class="filter-bar"><div class="filters"><div class="filter-group"><label>Route</label><select id="f-route" onchange="window.applyFilters?.()"><option value="">All Routes</option></select></div><div class="filter-group"><label>Stoppage</label><select id="f-stop" onchange="applyFilters()"><option value="">All</option><option>Carzon</option><option>TSC</option><option>VC Chattor</option></select></div><div class="filter-group"><label>Early Access</label><select id="f-early" onchange="applyFilters()"><option value="">All</option><option value="true">Yes</option><option value="false">No</option></select></div><div class="filter-group"><label>Physical Issue</label><select id="f-physical" onchange="applyFilters()"><option value="">All</option><option>প্রায়ই হয়</option><option>মাঝে মাঝে হয়</option><option>খুব একটা হয় না</option></select></div><div class="filter-group"><label>Destination</label><select id="f-dest" onchange="applyFilters()"><option value="">All</option><option>বাসায়</option><option>টিউশন</option><option>অন্য কোথাও</option></select></div><button class="btn-clear-filters" onclick="clearFilters()">✖ Clear</button></div><div class="filter-result" id="filter-result"></div></section>
-  
-  <div class="charts-grid-2">
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Bus Route Distribution</div><div class="chart-badge">Q1</div></div><div class="bar-chart" id="chart-route"></div></div>
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Boarding Stoppage</div><div class="chart-badge">Q2</div></div><div class="bar-chart" id="chart-stop"></div></div>
-  </div>
-  <div class="charts-grid-3">
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Commute Duration</div><div class="chart-badge">Q3</div></div><div class="donut-wrap"><canvas id="chart-time" width="200" height="200"></canvas><div class="donut-legend" id="legend-time"></div></div></div>
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Physical Issues During Journey</div><div class="chart-badge">Q4</div></div><div class="donut-wrap"><canvas id="chart-physical" width="200" height="200"></canvas><div class="donut-legend" id="legend-physical"></div></div></div>
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Post-Bus Destination</div><div class="chart-badge">Q5</div></div><div class="donut-wrap"><canvas id="chart-dest" width="200" height="200"></canvas><div class="donut-legend" id="legend-dest"></div></div></div>
-  </div>
-  <!-- NEW CHART: Avg Energy Impact by Route (chart system) -->
-  <div class="chart-card full-width"><div class="chart-header"><div class="chart-title">⚡ Average Energy Impact by Bus Route</div><div class="chart-badge">Advanced Analytics</div></div><div class="bar-chart" id="chart-avg-energy-route"></div><div class="scale-avg" style="text-align:center; margin-top:10px" id="global-energy-note"></div></div>
-  <div class="charts-grid-2">
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Preferred Drinks in Heat</div><div class="chart-badge">Section NO</div></div><div class="bar-chart" id="chart-drink"></div></div>
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Affordable Combo Box Price</div><div class="chart-badge">Section NO</div></div><div class="bar-chart" id="chart-price"></div></div>
-  </div>
-  <div class="charts-grid-2">
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Snack Purchase Frequency (1-5)</div><div class="chart-badge">Scale</div></div><div class="scale-chart" id="chart-snack"></div><div class="scale-avg" id="avg-snack"></div></div>
-    <div class="chart-card"><div class="chart-header"><div class="chart-title">Energy Impact on Tutoring</div><div class="chart-badge">Scale 1-5</div></div><div class="scale-chart" id="chart-energy"></div><div class="scale-avg" id="avg-energy"></div></div>
-  </div>
-  <!-- Early access with messenger/whatsapp message button (only name+contact) -->
-  <div class="chart-card full-width"><div class="chart-header"><div class="chart-title">🤝 Early Access Partners (Name + Contact)</div><div class="chart-badge">Message Ready</div></div><div id="early-stats" class="early-stats"></div></div>
-  <div class="chart-card full-width"><div class="chart-header"><div class="chart-title">📦 Product Suggestions</div></div><div class="suggestions-wrap" id="suggestions-wrap"></div></div>
-  <div class="chart-card full-width"><div class="chart-header"><div class="chart-title">📋 All Responses</div><div><input type="text" class="search-input" id="table-search" placeholder="Search name, route, phone…" oninput="window.renderTable?.()"><button class="btn-export" onclick="window.exportCSV?.()">⬇ Export CSV</button></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Timestamp</th><th>Route</th><th>Stop</th><th>Time</th><th>Physical</th><th>Destination</th><th>Early</th><th>Contact</th><th>Name</th><th>Session</th><th>Drink</th><th>Price</th><th>Snack</th><th>Energy</th></tr></thead><tbody id="table-body"></tbody></table></div><div class="table-footer" id="table-footer"></div></div>
-</main>
 
-<!-- Modal for custom message -->
-<div class="modal-overlay" id="messageModal"><div class="message-modal"><h3>✉️ Custom Message</h3><p style="font-size:0.8rem; color:#aaa;">Edit message before sending — the message will be auto-filled in WhatsApp or copied for Messenger.</p><textarea id="modalMessage" rows="5"></textarea><div class="modal-actions"><button class="btn-cancel" id="closeModalBtn">Cancel</button><button class="btn-done" id="sendMessageBtn">Done → Redirect & Auto‑paste</button></div></div></div>
+  <!-- ── TOP BAR ── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <span class="logo-dot"></span>
+        DU BUS
+      </div>
+      <span class="topbar-sub">Commute Project — Response Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="last-refresh" id="last-refresh">—</div>
+      <button class="btn-refresh" id="btn-refresh" onclick="loadData()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <!-- ── LOADING OVERLAY ── -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading responses…</div>
+  </div>
 
-  const firebaseConfig = { apiKey: "AIzaSyB94_Y4ox7f0OvPlTZ2kQ-RQQoAbhlp0CU", authDomain: "time-and-task-management-2d8c3.firebaseapp.com", projectId: "time-and-task-management-2d8c3", storageBucket: "time-and-task-management-2d8c3.firebasestorage.app", messagingSenderId: "987578072001", appId: "1:987578072001:web:f10a27db2b915690364d40" };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  
-  let allData = [], filtered = [];
-  const chartColors = ["#e53935","#2196f3","#4caf50","#ffc107","#9c27b0","#ff5722","#009688","#607d8b"];
-  let pendingContact = null; // { contactValue, type, person }
+  <!-- ── MAIN ── -->
+  <main class="dashboard" id="dashboard">
 
-  window.loadData = async function() {
-    const btn = document.getElementById("btn-refresh");
-    btn.classList.add("spinning");
-    document.getElementById("loading-overlay").classList.remove("hidden");
-    try {
-      const q = query(collection(db, "responses"), orderBy("timestamp", "desc"));
-      const snap = await getDocs(q);
-      allData = snap.docs.map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toDate?.() || null, early_access: !!doc.data().early_access, snack_interest: doc.data().snack_interest || 0, energy_impact: doc.data().energy_impact || 0 }));
-      populateRouteFilter();
-      applyFilters();
-      document.getElementById("last-refresh").innerText = "Updated " + new Date().toLocaleTimeString();
-    } catch(e) { console.error(e); document.getElementById("last-refresh").innerText = "Error"; }
-    btn.classList.remove("spinning");
-    document.getElementById("loading-overlay").classList.add("hidden");
-  };
-  function populateRouteFilter() { let sel = document.getElementById("f-route"); let cur = sel.value; while(sel.options.length>1) sel.remove(1); [...new Set(allData.map(d=>d.route).filter(Boolean))].sort().forEach(r=>{let opt=document.createElement("option");opt.value=r;opt.text=r;sel.appendChild(opt);}); sel.value=cur; }
-  window.applyFilters = function() { let fRoute=document.getElementById("f-route").value,fStop=document.getElementById("f-stop").value,fEarly=document.getElementById("f-early").value,fPhysical=document.getElementById("f-physical").value,fDest=document.getElementById("f-dest").value; filtered = allData.filter(d=>{if(fRoute && d.route!==fRoute) return false; if(fStop && d.stoppage!==fStop) return false; if(fEarly && String(d.early_access)!==fEarly) return false; if(fPhysical && d.physical_issue!==fPhysical) return false; if(fDest && d.destination!==fDest) return false; return true;}); document.getElementById("filter-result").innerHTML = (fRoute||fStop||fEarly||fPhysical||fDest)?`Showing ${filtered.length} of ${allData.length} responses`:""; renderAll(); };
-  window.clearFilters = function() { ["f-route","f-stop","f-early","f-physical","f-dest"].forEach(id=>document.getElementById(id).value=""); applyFilters(); };
-  function renderAll() { renderKPIs(); renderBarChart("chart-route", countBy(filtered,"route"), true); renderBarChart("chart-stop", countBy(filtered,"stoppage"), false); renderBarChart("chart-drink", countBy(filtered,"drink_choice"), false); renderBarChart("chart-price", countBy(filtered,"price_range"), false); renderDonut("chart-time","legend-time", countBy(filtered,"commute_time")); renderDonut("chart-physical","legend-physical", countBy(filtered,"physical_issue")); renderDonut("chart-dest","legend-dest", countBy(filtered,"destination")); renderScaleChart("chart-snack","avg-snack", filtered, "snack_interest","সপ্তাহে"); renderScaleChart("chart-energy","avg-energy", filtered, "energy_impact","Tutoring impact"); renderAvgEnergyByRouteChart(); renderEarlyAccessWithMessages(); renderSuggestions(); renderTable(); }
-  function renderKPIs() { let total=filtered.length, early=filtered.filter(d=>d.early_access).length, wa=filtered.filter(d=>d.contact_method==="WhatsApp").length, msg=filtered.filter(d=>d.contact_method==="Messenger").length, physical=filtered.filter(d=>d.physical_issue==="প্রায়ই হয়"||d.physical_issue==="মাঝে মাঝে হয়").length; let energyVals=filtered.map(d=>d.energy_impact).filter(v=>v>0); let avgE=energyVals.length?(energyVals.reduce((a,b)=>a+b,0)/energyVals.length).toFixed(1):"—"; animateCount("kv-total",total); animateCount("kv-early",early); animateCount("kv-whatsapp",wa); animateCount("kv-messenger",msg); animateCount("kv-physical",physical); document.getElementById("kv-energy").innerText = avgE!=="—"?avgE+"/5":"—"; }
-  function animateCount(id,target){ let el=document.getElementById(id); let start=parseInt(el.innerText)||0; let startTime=performance.now(); function step(now){ let t=Math.min((now-startTime)/600,1); let ease=1-Math.pow(1-t,3); el.innerText=Math.round(start+(target-start)*ease); if(t<1) requestAnimationFrame(step); } requestAnimationFrame(step); }
-  function countBy(arr,key){ return arr.reduce((acc,d)=>{let v=d[key]; if(v!==undefined && v!==null && v!=="") acc[v]=(acc[v]||0)+1; return acc;},{}); }
-  function renderBarChart(containerId, counts, sorted) { let container=document.getElementById(containerId); if(!container) return; container.innerHTML=""; let entries=Object.entries(counts); if(sorted) entries.sort((a,b)=>b[1]-a[1]); let total=entries.reduce((s,[,v])=>s+v,0); if(!entries.length){container.innerHTML="<div class='empty-state'>No data</div>";return;} entries.forEach(([label,count],i)=>{ let pct=total?Math.round(count/total*100):0; let color=chartColors[i%chartColors.length]; let row=document.createElement("div"); row.className="bar-row"; row.innerHTML=`<div class="bar-label">${label||"—"}</div><div class="bar-track"><div class="bar-fill" style="width:0%;background:${color}" data-pct="${pct}">${pct>=12?`<span class="bar-pct">${pct}%</span>`:""}</div></div><div class="bar-count">${count}</div>`; container.appendChild(row); }); requestAnimationFrame(()=>{ container.querySelectorAll(".bar-fill").forEach(el=>el.style.width=el.dataset.pct+"%"); }); }
-  function renderDonut(canvasId, legendId, counts) { let canvas=document.getElementById(canvasId); let legendEl=document.getElementById(legendId); if(!canvas) return; let ctx=canvas.getContext("2d"); let entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]); let total=entries.reduce((s,[,v])=>s+v,0); ctx.clearRect(0,0,canvas.width,canvas.height); if(!total){ ctx.fillStyle="#aaa"; ctx.fillText("No data",canvas.width/2,canvas.height/2); legendEl.innerHTML=""; return; } let cx=canvas.width/2,cy=canvas.height/2,r=75,inner=42; let angle=-Math.PI/2; entries.forEach(([label,count],i)=>{ let slice=(count/total)*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+slice); ctx.fillStyle=chartColors[i%chartColors.length]; ctx.fill(); angle+=slice; }); ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fillStyle="#161616"; ctx.fill(); ctx.fillStyle="white"; ctx.font="bold 22px Syne"; ctx.fillText(total,cx,cy-6); ctx.font="10px Syne"; ctx.fillStyle="#aaa"; ctx.fillText("responses",cx,cy+12); legendEl.innerHTML=entries.map(([label,count],i)=>{ let pct=Math.round(count/total*100); return `<div class="legend-item"><span class="legend-dot" style="background:${chartColors[i%chartColors.length]}"></span><span>${label||"—"}</span><span class="legend-val">${count} (${pct}%)</span></div>`; }).join(""); }
-  function renderScaleChart(containerId, avgId, data, field, label) { let container=document.getElementById(containerId); if(!container) return; let counts={1:0,2:0,3:0,4:0,5:0}; let sum=0,n=0; data.forEach(d=>{let v=d[field]; if(v>=1&&v<=5){counts[v]++; sum+=v; n++;}}); let max=Math.max(...Object.values(counts),1); let avg=n?(sum/n).toFixed(2):null; container.innerHTML=[1,2,3,4,5].map(i=>{ let h=Math.round((counts[i]/max)*100); return `<div class="scale-col"><div class="scale-count">${counts[i]}</div><div class="scale-bar-wrap"><div class="scale-bar" style="height:0%;background:hsl(${(i-1)*25+0},70%,55%)" data-h="${h}"></div></div><div class="scale-num">${i}</div></div>`; }).join(""); requestAnimationFrame(()=>{ container.querySelectorAll(".scale-bar").forEach(el=>el.style.height=el.dataset.h+"%"); }); document.getElementById(avgId).innerHTML=avg?`Average: <strong>${avg}</strong> /5 · ${n} responses`:`No data`; }
-  // NEW chart: avg energy impact by route
-  function renderAvgEnergyByRouteChart() { let container=document.getElementById("chart-avg-energy-route"); if(!container) return; let routeScores={}; filtered.forEach(d=>{ if(d.route && d.energy_impact>=1 && d.energy_impact<=5){ if(!routeScores[d.route]) routeScores[d.route]={sum:0,count:0}; routeScores[d.route].sum+=d.energy_impact; routeScores[d.route].count++; } }); let entries=Object.entries(routeScores).map(([route,val])=>[route, val.sum/val.count]).sort((a,b)=>b[1]-a[1]); if(!entries.length){ container.innerHTML="<div class='empty-state'>No energy data for routes</div>"; document.getElementById("global-energy-note").innerHTML=""; return; } let maxAvg=Math.max(...entries.map(e=>e[1]),1); container.innerHTML=""; entries.forEach(([route,avg],idx)=>{ let percent=(avg/maxAvg)*100; let row=document.createElement("div"); row.className="bar-row"; row.innerHTML=`<div class="bar-label">${route}</div><div class="bar-track"><div class="bar-fill" style="width:0%;background:#ff8a65" data-pct="${percent}"><span class="bar-pct" style="color:white">${avg.toFixed(1)}</span></div></div><div class="bar-count">⭐ ${avg.toFixed(1)} /5</div>`; container.appendChild(row); }); requestAnimationFrame(()=>{ container.querySelectorAll(".bar-fill").forEach(el=>el.style.width=el.dataset.pct+"%"); }); let globalAvg=filtered.filter(d=>d.energy_impact>=1).reduce((a,b)=>a+b.energy_impact,0)/(filtered.filter(d=>d.energy_impact>=1).length||1); document.getElementById("global-energy-note").innerHTML=`🌍 Overall average energy impact: <strong>${globalAvg.toFixed(2)}/5</strong> (higher = more negative impact on tutoring)`; }
-  function renderEarlyAccessWithMessages() { let earlyUsers = filtered.filter(d=> d.early_access && d.name && d.name.trim() !== "" && ( (d.contact_method==="WhatsApp" && d.whatsapp) || (d.contact_method==="Messenger" && d.messenger) )); let container=document.getElementById("early-stats"); if(!container) return; if(earlyUsers.length===0){ container.innerHTML=`<div class="early-card">No partners with full name + contact yet.</div>`; return; } let html=`<div class="early-contact-list">`; earlyUsers.forEach(user=>{ let contactValue = user.contact_method==="WhatsApp"? user.whatsapp : user.messenger; let contactType = user.contact_method; html+=`<div class="early-contact-item" data-userid="${user.id}"><div class="ec-info"><span class="ec-name">${escapeHtml(user.name)}</span><span class="ec-session">${user.session||"—"}</span><span class="ec-contact ${contactType==='WhatsApp'?'contact-wa':'contact-msg'}">${contactType==='WhatsApp'?'📱 ':'💬 '}${contactValue||"—"}</span></div><button class="btn-message" data-contact="${contactValue}" data-type="${contactType}" data-name="${escapeHtml(user.name)}" data-route="${escapeHtml(user.route||'')}" data-stop="${escapeHtml(user.stoppage||'')}" data-session="${escapeHtml(user.session||'')}">✉️ Message</button></div>`; }); html+=`</div>`; container.innerHTML=html; document.querySelectorAll(".btn-message").forEach(btn=>{ btn.addEventListener("click",(e)=>{ e.stopPropagation(); let contact=btn.getAttribute("data-contact"); let type=btn.getAttribute("data-type"); let name=btn.getAttribute("data-name"); let route=btn.getAttribute("data-route"); let stop=btn.getAttribute("data-stop"); let session=btn.getAttribute("data-session"); let defaultMsg = `Hello ${name}, this is DU BUS Commute team. Your route: ${route}, stoppage: ${stop}, session: ${session}. We are reaching out regarding early access collaboration. Looking forward to connect!`; pendingContact = { contactValue: contact, type: type, person: { name, route, stop, session } }; let modal = document.getElementById("messageModal"); document.getElementById("modalMessage").value = defaultMsg; modal.classList.add("active"); }); }); }
-  function escapeHtml(str){ if(!str) return ""; return str.replace(/[&<>]/g, function(m){if(m==="&") return "&amp;"; if(m==="<") return "&lt;"; if(m===">") return "&gt;"; return m;}); }
-  function renderSuggestions() { let arr=filtered.map(d=>d.product_suggestion?.trim()).filter(Boolean); document.getElementById("suggestions-wrap").innerHTML=arr.length?arr.map(s=>`<span class="suggestion-tag">${escapeHtml(s)}</span>`).join(""):"<span class='empty-state'>No suggestions yet</span>"; }
-  window.renderTable = function() { let search=document.getElementById("table-search")?.value.toLowerCase()||""; let body=document.getElementById("table-body"); let rows=filtered.filter(d=>!search||d.name?.toLowerCase().includes(search)||d.route?.toLowerCase().includes(search)||d.stoppage?.toLowerCase().includes(search)||d.whatsapp?.includes(search)||d.session?.toLowerCase().includes(search)); if(!rows.length){ body.innerHTML=`<tr><td colspan="15" class="empty-state">No matching</td></tr>`; document.getElementById("table-footer").innerText=""; return; } body.innerHTML=rows.map((d,i)=>`<tr><td>${i+1}</td><td>${d.timestamp?d.timestamp.toLocaleString():""}</td><td>${d.route||""}</td><td>${d.stoppage||""}</td><td>${d.commute_time||""}</td><td>${d.physical_issue||""}</td><td>${d.destination||""}</td><td>${d.early_access?"<span class='badge-yes'>YES</span>":"<span class='badge-no'>NO</span>"}</td><td class="${d.contact_method==='WhatsApp'?'contact-wa':'contact-msg'}">${d.contact_method==="WhatsApp"?("📱 "+(d.whatsapp||"")):d.contact_method==="Messenger"?("💬 "+(d.messenger||"")):"—"}</td><td>${d.name||""}</td><td>${d.session||""}</td><td>${d.drink_choice||""}</td><td>${d.price_range||""}</td><td style="color:var(--accent)">${d.snack_interest||0}</td><td style="color:var(--accent)">${d.energy_impact||0}</td></tr>`).join(""); document.getElementById("table-footer").innerText=`Showing ${rows.length} responses`; };
-  window.exportCSV = function() { let headers=["Timestamp","Route","Stoppage","Commute Time","Physical Issue","Destination","Early Access","Contact Method","WhatsApp","Messenger","Name","Session","Product Suggestion","Snack Interest","Drink Choice","Price Range","Energy Impact"]; let rows=filtered.map(d=>[d.timestamp?d.timestamp.toLocaleString():"",d.route,d.stoppage,d.commute_time,d.physical_issue,d.destination,d.early_access?"Yes":"No",d.contact_method,d.whatsapp,d.messenger,d.name,d.session,d.product_suggestion,d.snack_interest,d.drink_choice,d.price_range,d.energy_impact]); let csv=[headers,...rows].map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n"); let blob=new Blob(["\uFEFF"+csv],{type:"text/csv"}); let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`du_bus_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(a.href); };
-  document.getElementById("closeModalBtn").addEventListener("click",()=>{ document.getElementById("messageModal").classList.remove("active"); pendingContact=null; });
-  document.getElementById("sendMessageBtn").addEventListener("click",()=>{ let msg=document.getElementById("modalMessage").value; if(!pendingContact){ document.getElementById("messageModal").classList.remove("active"); return; } let {contactValue,type}=pendingContact; if(type==="WhatsApp" && contactValue){ let url=`https://wa.me/${contactValue.replace(/[^0-9+]/g,'')}?text=${encodeURIComponent(msg)}`; window.open(url,"_blank"); } else if(type==="Messenger" && contactValue){ navigator.clipboard.writeText(msg).then(()=>{ alert("✅ Message copied to clipboard! Opening Messenger — please paste the message."); let cleanId=contactValue.replace(/^@/,'').split('?')[0]; window.open(`https://m.me/${encodeURIComponent(cleanId)}`,"_blank"); }); } else { alert("Invalid contact"); } document.getElementById("messageModal").classList.remove("active"); pendingContact=null; });
-  document.getElementById("loading-overlay").classList.add("hidden");
-  window.loadData();
-</script>
+    <!-- ── KPI ROW ── -->
+    <section class="kpi-row" id="kpi-row">
+      <div class="kpi-card" id="kpi-total">
+        <div class="kpi-body">
+          <div class="kpi-value" id="kv-total">—</div>
+          <div class="kpi-label">Total Responses</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-body">
+          <div class="kpi-value" id="kv-early">—</div>
+          <div class="kpi-label">Early Access Partners</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📱</div>
+        <div class="kpi-body">
+          <div class="kpi-value" id="kv-whatsapp">—</div>
+          <div class="kpi-label">WhatsApp Contacts</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-body">
+          <div class="kpi-value" id="kv-messenger">—</div>
+          <div class="kpi-label">Messenger Contacts</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-body">
+          <div class="kpi-value" id="kv-physical">—</div>
+          <div class="kpi-label">Report Physical Issues</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-body">
+          <div class="kpi-value" id="kv-energy">—</div>
+          <div class="kpi-label">Avg Energy Impact</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FILTERS ── -->
+    <section class="filter-bar">
+      <div class="filter-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filters
+      </div>
+      <div class="filters">
+        <div class="filter-group">
+          <label>Route</label>
+          <select id="f-route" onchange="applyFilters()">
+            <option value="">All Routes</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Stoppage</label>
+          <select id="f-stop" onchange="applyFilters()">
+            <option value="">All Stoppages</option>
+            <option value="Carzon">Carzon</option>
+            <option value="TSC">TSC</option>
+            <option value="VC Chattor">VC Chattor</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Early Access</label>
+          <select id="f-early" onchange="applyFilters()">
+            <option value="">All</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Physical Issue</label>
+          <select id="f-physical" onchange="applyFilters()">
+            <option value="">All</option>
+            <option value="প্রায়ই হয়">প্রায়ই হয়</option>
+            <option value="মাঝে মাঝে হয়">মাঝে মাঝে হয়</option>
+            <option value="খুব একটা হয় না">খুব একটা হয় না</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Destination</label>
+          <select id="f-dest" onchange="applyFilters()">
+            <option value="">All</option>
+            <option value="বাসায়">বাসায়</option>
+            <option value="টিউশন">টিউশন</option>
+            <option value="অন্য কোথাও">অন্য কোথাও</option>
+          </select>
+        </div>
+        <button class="btn-clear-filters" onclick="clearFilters()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Clear
+        </button>
+      </div>
+      <div class="filter-result" id="filter-result"></div>
+    </section>
+
+    <!-- ── CHARTS ROW 1 ── -->
+    <div class="charts-grid-2">
+
+      <!-- Route Distribution -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Bus Route Distribution</div>
+          <div class="chart-badge">Q1</div>
+        </div>
+        <div class="bar-chart" id="chart-route"></div>
+      </div>
+
+      <!-- Stoppage Distribution -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Boarding Stoppage</div>
+          <div class="chart-badge">Q2</div>
+        </div>
+        <div class="bar-chart" id="chart-stop"></div>
+      </div>
+
+    </div>
+
+    <!-- ── CHARTS ROW 2 ── -->
+    <div class="charts-grid-3">
+
+      <!-- Commute Time -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Commute Duration</div>
+          <div class="chart-badge">Q3</div>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="chart-time" width="200" height="200"></canvas>
+          <div class="donut-legend" id="legend-time"></div>
+        </div>
+      </div>
+
+      <!-- Physical Issues -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Physical Issues During Journey</div>
+          <div class="chart-badge">Q4</div>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="chart-physical" width="200" height="200"></canvas>
+          <div class="donut-legend" id="legend-physical"></div>
+        </div>
+      </div>
+
+      <!-- Destination -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Post-Bus Destination</div>
+          <div class="chart-badge">Q5</div>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="chart-dest" width="200" height="200"></canvas>
+          <div class="donut-legend" id="legend-dest"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── CHARTS ROW 3 ── -->
+    <div class="charts-grid-2">
+
+      <!-- Drink Preference -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Preferred Drinks in Heat</div>
+          <div class="chart-badge">Section NO · Q2</div>
+        </div>
+        <div class="bar-chart" id="chart-drink"></div>
+      </div>
+
+      <!-- Price Range -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Affordable Combo Box Price</div>
+          <div class="chart-badge">Section NO · Q3</div>
+        </div>
+        <div class="bar-chart" id="chart-price"></div>
+      </div>
+
+    </div>
+
+    <!-- ── SCALE CHARTS ROW ── -->
+    <div class="charts-grid-2">
+
+      <!-- Snack Interest Scale -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Snack Purchase Frequency (per week)</div>
+          <div class="chart-badge">Section NO · Q1 · Scale 1–5</div>
+        </div>
+        <div class="scale-chart" id="chart-snack"></div>
+        <div class="scale-avg" id="avg-snack"></div>
+      </div>
+
+      <!-- Energy Impact Scale -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Energy Impact on Tutoring</div>
+          <div class="chart-badge">Section NO · Q4 · Scale 1–5</div>
+        </div>
+        <div class="scale-chart" id="chart-energy"></div>
+        <div class="scale-avg" id="avg-energy"></div>
+      </div>
+
+    </div>
+
+    <!-- ── EARLY ACCESS SECTION ── -->
+    <div class="chart-card full-width">
+      <div class="chart-header">
+        <div class="chart-title">Early Access Partners</div>
+        <div class="chart-badge">Q6 + Section YES</div>
+      </div>
+      <div class="early-stats" id="early-stats"></div>
+    </div>
+
+    <!-- ── PRODUCT SUGGESTIONS ── -->
+    <div class="chart-card full-width">
+      <div class="chart-header">
+        <div class="chart-title">Product Suggestions</div>
+        <div class="chart-badge">Section YES · Q4 · Open Text</div>
+      </div>
+      <div class="suggestions-wrap" id="suggestions-wrap"></div>
+    </div>
+
+    <!-- ── RAW DATA TABLE ── -->
+    <div class="chart-card full-width">
+      <div class="chart-header">
+        <div class="chart-title">All Responses</div>
+        <div class="chart-actions">
+          <input type="text" class="search-input" id="table-search" placeholder="Search name, route, phone…" oninput="renderTable()"/>
+          <button class="btn-export" onclick="exportCSV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Timestamp</th>
+              <th>Route</th>
+              <th>Stop</th>
+              <th>Time</th>
+              <th>Physical</th>
+              <th>Destination</th>
+              <th>Early Access</th>
+              <th>Contact</th>
+              <th>Name</th>
+              <th>Session</th>
+              <th>Drink</th>
+              <th>Price</th>
+              <th>Snack</th>
+              <th>Energy</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="table-footer" id="table-footer"></div>
+    </div>
+
+  </main>
+
+  <script type="module" src="dashboard.js"></script>
 </body>
 </html>
