@@ -71,10 +71,13 @@
           <div class="kpi-label">Report Physical Issues</div>
         </div>
       </div>
-      <div class="kpi-card">
+
+      <!-- Energy KPI with mini spark chart -->
+      <div class="kpi-card kpi-card-energy">
         <div class="kpi-body">
           <div class="kpi-value" id="kv-energy">—</div>
           <div class="kpi-label">Avg Energy Impact</div>
+          <div class="kpi-spark" id="kpi-energy-spark"></div>
         </div>
       </div>
     </section>
@@ -137,8 +140,6 @@
 
     <!-- ── CHARTS ROW 1 ── -->
     <div class="charts-grid-2">
-
-      <!-- Route Distribution -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Bus Route Distribution</div>
@@ -146,8 +147,6 @@
         </div>
         <div class="bar-chart" id="chart-route"></div>
       </div>
-
-      <!-- Stoppage Distribution -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Boarding Stoppage</div>
@@ -155,13 +154,10 @@
         </div>
         <div class="bar-chart" id="chart-stop"></div>
       </div>
-
     </div>
 
     <!-- ── CHARTS ROW 2 ── -->
     <div class="charts-grid-3">
-
-      <!-- Commute Time -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Commute Duration</div>
@@ -172,8 +168,6 @@
           <div class="donut-legend" id="legend-time"></div>
         </div>
       </div>
-
-      <!-- Physical Issues -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Physical Issues During Journey</div>
@@ -184,8 +178,6 @@
           <div class="donut-legend" id="legend-physical"></div>
         </div>
       </div>
-
-      <!-- Destination -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Post-Bus Destination</div>
@@ -196,13 +188,10 @@
           <div class="donut-legend" id="legend-dest"></div>
         </div>
       </div>
-
     </div>
 
     <!-- ── CHARTS ROW 3 ── -->
     <div class="charts-grid-2">
-
-      <!-- Drink Preference -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Preferred Drinks in Heat</div>
@@ -210,8 +199,6 @@
         </div>
         <div class="bar-chart" id="chart-drink"></div>
       </div>
-
-      <!-- Price Range -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Affordable Combo Box Price</div>
@@ -219,13 +206,10 @@
         </div>
         <div class="bar-chart" id="chart-price"></div>
       </div>
-
     </div>
 
     <!-- ── SCALE CHARTS ROW ── -->
     <div class="charts-grid-2">
-
-      <!-- Snack Interest Scale -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Snack Purchase Frequency (per week)</div>
@@ -234,8 +218,6 @@
         <div class="scale-chart" id="chart-snack"></div>
         <div class="scale-avg" id="avg-snack"></div>
       </div>
-
-      <!-- Energy Impact Scale -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Energy Impact on Tutoring</div>
@@ -244,7 +226,6 @@
         <div class="scale-chart" id="chart-energy"></div>
         <div class="scale-avg" id="avg-energy"></div>
       </div>
-
     </div>
 
     <!-- ── EARLY ACCESS SECTION ── -->
@@ -254,6 +235,7 @@
         <div class="chart-badge">Q6 + Section YES</div>
       </div>
       <div class="early-stats" id="early-stats"></div>
+      <!-- Contact list is injected here by JS (early-list-section) -->
     </div>
 
     <!-- ── PRODUCT SUGGESTIONS ── -->
@@ -305,6 +287,8 @@
     </div>
 
   </main>
+
+  <!-- ── MESSAGE POPUP is injected by JS ── -->
 
   <script type="module" src="dashboard.js"></script>
 </body>
