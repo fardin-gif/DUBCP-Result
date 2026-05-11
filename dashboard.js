@@ -25,9 +25,6 @@ let allData     = [];
 let filtered    = [];
 let chartColors = ["#e53935","#2196f3","#4caf50","#ffc107","#9c27b0","#ff5722","#009688","#607d8b"];
 
-// =============================================
-//  LOAD DATA
-// =============================================
 
 window.loadData = async function () {
   const btn = document.getElementById("btn-refresh");
