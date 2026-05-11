@@ -137,14 +137,11 @@ function renderAll() {
   renderDonut("chart-dest",     "legend-dest",     countBy(filtered, "destination"));
   renderScaleChart("chart-snack",  "avg-snack",  filtered, "snack_interest",  "সপ্তাহে");
   renderScaleChart("chart-energy", "avg-energy", filtered, "energy_impact",   "Tutoring impact");
+  renderAvgEnergyChart();
   renderEarlyAccess();
   renderSuggestions();
   renderTable();
 }
-
-// =============================================
-//  KPIs — with energy mini-chart
-// =============================================
 
 function renderKPIs() {
   const total     = filtered.length;
@@ -157,34 +154,15 @@ function renderKPIs() {
   const energyVals = filtered.map(d => d.energy_impact).filter(v => v > 0);
   const avgEnergy = energyVals.length
     ? (energyVals.reduce((a,b) => a+b, 0) / energyVals.length).toFixed(1)
-    : null;
+    : "—";
 
   animateCount("kv-total",    total);
   animateCount("kv-early",    early);
   animateCount("kv-whatsapp", wa);
   animateCount("kv-messenger",msg);
   animateCount("kv-physical", physical);
-
-  // Energy KPI — value + mini spark bars
-  const energyEl = document.getElementById("kv-energy");
-  energyEl.textContent = avgEnergy ? avgEnergy + "/5" : "—";
-
-  // Mini spark bars for energy distribution inside the KPI card
-  const sparkEl = document.getElementById("kpi-energy-spark");
-  if (sparkEl) {
-    if (!energyVals.length) {
-      sparkEl.innerHTML = "";
-      return;
-    }
-    const counts = {1:0,2:0,3:0,4:0,5:0};
-    energyVals.forEach(v => { if (counts[v] !== undefined) counts[v]++; });
-    const maxC = Math.max(...Object.values(counts), 1);
-    const colors = ["#607d8b","#ff5722","#ffc107","#4caf50","#e53935"];
-    sparkEl.innerHTML = [1,2,3,4,5].map((i,idx) => {
-      const h = Math.round((counts[i] / maxC) * 28);
-      return `<div class="kpi-spark-bar" style="height:${Math.max(h,3)}px;background:${colors[idx]}" title="${i}★: ${counts[i]}"></div>`;
-    }).join("");
-  }
+  document.getElementById("kv-energy").textContent =
+    avgEnergy !== "—" ? avgEnergy + "/5" : "—";
 }
 
 function animateCount(id, target) {
@@ -200,10 +178,6 @@ function animateCount(id, target) {
   }
   requestAnimationFrame(step);
 }
-
-// =============================================
-//  BAR CHART
-// =============================================
 
 function renderBarChart(containerId, counts, sorted) {
   const container = document.getElementById(containerId);
@@ -239,10 +213,6 @@ function renderBarChart(containerId, counts, sorted) {
   });
 }
 
-// =============================================
-//  DONUT CHART
-// =============================================
-
 function renderDonut(canvasId, legendId, counts) {
   const canvas = document.getElementById(canvasId);
   const legendEl = document.getElementById(legendId);
@@ -256,7 +226,7 @@ function renderDonut(canvasId, legendId, counts) {
 
   if (!total) {
     ctx.fillStyle = "#333";
-    ctx.font = "12px Syne";
+    ctx.font = "12px Syne, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("No data", canvas.width/2, canvas.height/2);
     legendEl.innerHTML = "";
@@ -265,56 +235,44 @@ function renderDonut(canvasId, legendId, counts) {
 
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
-  const r  = 75;
-  const inner = 42;
+  const outerR = Math.min(cx, cy) - 4;
+  const innerR = outerR * 0.58;
   let angle = -Math.PI / 2;
 
-  entries.forEach(([label, count], i) => {
+  entries.forEach(([, count], i) => {
     const slice = (count / total) * Math.PI * 2;
-    const color = chartColors[i % chartColors.length];
-
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, angle, angle + slice);
+    ctx.arc(cx, cy, outerR, angle, angle + slice);
     ctx.closePath();
-    ctx.fillStyle = color;
+    ctx.fillStyle = chartColors[i % chartColors.length];
     ctx.fill();
-
     angle += slice;
   });
 
-  // Donut hole
+  // Inner hole
   ctx.beginPath();
-  ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-  ctx.fillStyle = "#161616";
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fillStyle = getComputedStyle(document.documentElement)
+    .getPropertyValue("--bg-2").trim() || "#161616";
   ctx.fill();
 
   // Center text
   ctx.fillStyle = "#f0f0f0";
-  ctx.font = "bold 22px Syne";
+  ctx.font = `bold 20px Syne, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(total, cx, cy - 6);
-  ctx.fillStyle = "#555";
-  ctx.font = "10px Syne";
-  ctx.fillText("responses", cx, cy + 12);
+  ctx.fillText(total, cx, cy);
 
   // Legend
-  legendEl.innerHTML = entries.map(([label, count], i) => {
-    const pct = Math.round(count/total*100);
-    return `
-      <div class="legend-item">
-        <span class="legend-dot" style="background:${chartColors[i % chartColors.length]}"></span>
-        <span>${label || "—"}</span>
-        <span class="legend-val">${count} <span style="color:#555;font-weight:400">(${pct}%)</span></span>
-      </div>
-    `;
-  }).join("");
+  legendEl.innerHTML = entries.map(([label, count], i) => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${chartColors[i % chartColors.length]}"></div>
+      <span>${label || "—"}</span>
+      <span class="legend-val">${count}</span>
+    </div>
+  `).join("");
 }
-
-// =============================================
-//  SCALE CHART
-// =============================================
 
 function renderScaleChart(containerId, avgId, data, field, label) {
   const container = document.getElementById(containerId);
@@ -361,7 +319,102 @@ function renderScaleChart(containerId, avgId, data, field, label) {
 }
 
 // =============================================
-//  EARLY ACCESS — filtered to name+contact only
+//  AVG ENERGY GAUGE CHART (NEW)
+// =============================================
+
+function renderAvgEnergyChart() {
+  const canvas = document.getElementById("chart-energy-gauge");
+  if (!canvas) return;
+
+  const vals = filtered.map(d => d.energy_impact).filter(v => v >= 1 && v <= 5);
+  const avg = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
+
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H * 0.72;
+  const r  = Math.min(W, H * 1.4) * 0.38;
+  const startAngle = Math.PI;
+  const endAngle   = 2 * Math.PI;
+
+  // Background arc track
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, endAngle);
+  ctx.strokeStyle = "#252525";
+  ctx.lineWidth = 18;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // Gradient fill arc
+  if (avg !== null) {
+    const fraction = (avg - 1) / 4; // 1–5 maps to 0–1
+    const fillEnd  = startAngle + fraction * Math.PI;
+
+    const grad = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+    grad.addColorStop(0,   "#ff6f6f");
+    grad.addColorStop(0.5, "#e53935");
+    grad.addColorStop(1,   "#b71c1c");
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, fillEnd);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 18;
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    // Needle dot at tip
+    const needleX = cx + r * Math.cos(fillEnd);
+    const needleY = cy + r * Math.sin(fillEnd);
+    ctx.beginPath();
+    ctx.arc(needleX, needleY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
+    ctx.shadowColor = "#e53935";
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Scale ticks (1–5)
+  for (let i = 0; i <= 4; i++) {
+    const angle = Math.PI + (i / 4) * Math.PI;
+    const tx = cx + (r + 22) * Math.cos(angle);
+    const ty = cy + (r + 22) * Math.sin(angle);
+    ctx.fillStyle = "#555";
+    ctx.font = "bold 10px Syne, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(i + 1, tx, ty);
+  }
+
+  // Center value text
+  if (avg !== null) {
+    ctx.fillStyle = "#f0f0f0";
+    ctx.font = "bold 26px Syne, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(avg.toFixed(1), cx, cy - 10);
+
+    ctx.fillStyle = "#555";
+    ctx.font = "11px Syne, sans-serif";
+    ctx.fillText("out of 5", cx, cy + 14);
+
+    ctx.fillStyle = "#e53935";
+    ctx.font = "bold 10px Syne, sans-serif";
+    ctx.fillText(`${vals.length} responses`, cx, cy + 30);
+  } else {
+    ctx.fillStyle = "#555";
+    ctx.font = "bold 22px Syne, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("—", cx, cy - 4);
+  }
+}
+
+// =============================================
+//  EARLY ACCESS (MODIFIED)
 // =============================================
 
 function renderEarlyAccess() {
@@ -369,19 +422,13 @@ function renderEarlyAccess() {
   const el = document.getElementById("early-stats");
   if (!el) return;
 
+  // Only count users with valid contact
+  const validUsers = earlyUsers.filter(d => hasValidContact(d));
   const wa  = earlyUsers.filter(d => d.contact_method === "WhatsApp").length;
   const msg = earlyUsers.filter(d => d.contact_method === "Messenger").length;
 
   const sessions = countBy(earlyUsers, "session");
   const topSession = Object.entries(sessions).sort((a,b)=>b[1]-a[1])[0];
-
-  // Only show people who have BOTH name and contact info
-  const contactable = earlyUsers.filter(d => {
-    const hasName    = d.name.trim() !== "";
-    const hasContact = (d.contact_method === "WhatsApp"  && d.whatsapp.trim()  !== "") ||
-                       (d.contact_method === "Messenger" && d.messenger.trim() !== "");
-    return hasName && hasContact;
-  });
 
   el.innerHTML = `
     <div class="early-card">
@@ -406,173 +453,110 @@ function renderEarlyAccess() {
     </div>
   `;
 
-  // Contact list — only people with both name + contact
-  const listSection = document.createElement("div");
-  listSection.style.cssText = "margin-top:1.5rem;";
-
-  const listHeader = document.createElement("div");
-  listHeader.className = "early-list-header";
-  listHeader.innerHTML = `
-    <div class="early-list-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-      Messageable Partners
-    </div>
-    <div class="early-list-count">${contactable.length} of ${earlyUsers.length} have name + contact</div>
-  `;
-  listSection.appendChild(listHeader);
-
-  if (!contactable.length) {
-    listSection.insertAdjacentHTML("beforeend",
-      `<div class="empty-state" style="padding:1.5rem">No partners with both name and contact info yet.</div>`
-    );
-  } else {
-    const listEl = document.createElement("div");
-    listEl.className = "early-contact-list";
-
-    contactable.forEach((d, idx) => {
-      const isWA  = d.contact_method === "WhatsApp";
-      const isMSG = d.contact_method === "Messenger";
-      const contactVal = isWA ? d.whatsapp : d.messenger;
-      const contactIcon = isWA
-        ? `<svg viewBox="0 0 24 24" width="13" height="13" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.998 0C5.372 0 0 5.373 0 12.001c0 2.117.554 4.104 1.523 5.832L.057 23.885l6.198-1.424A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12.001C24 5.373 18.627 0 11.998 0zm.002 21.818a9.817 9.817 0 01-5.001-1.369l-.357-.213-3.702.851.882-3.596-.234-.371A9.816 9.816 0 012.18 12c0-5.42 4.4-9.82 9.82-9.82 5.42 0 9.82 4.4 9.82 9.82 0 5.42-4.4 9.818-9.82 9.818z"/></svg>`
-        : `<svg viewBox="0 0 24 24" width="13" height="13" fill="#1877f2"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.99 4.388 10.954 10.125 11.854V15.47H7.078V12h3.047V9.356c0-3.007 1.792-4.669 4.532-4.669 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.874V12h3.328l-.532 3.47h-2.796v8.385C19.612 22.954 24 17.99 24 12c0-6.627-5.373-12-12-12z"/></svg>`;
-
-      const item = document.createElement("div");
-      item.className = "early-contact-item";
-      item.dataset.idx = idx;
-      item.innerHTML = `
-        <div class="ec-avatar">${d.name.trim().charAt(0).toUpperCase()}</div>
-        <div class="ec-info">
-          <div class="ec-name">${d.name}</div>
-          <div class="ec-meta">${d.session || "—"} · ${d.route || "—"} · ${d.stoppage || "—"}</div>
+  if (validUsers.length) {
+    const listHtml = `
+      <div style="margin-top:1.25rem;">
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:.6rem;">
+          Contact List <span style="color:var(--accent);margin-left:6px;">${validUsers.length} contactable</span>
         </div>
-        <div class="ec-contact-pill ${isWA ? 'ec-wa' : 'ec-msg'}">
-          ${contactIcon}
-          <span>${contactVal}</span>
+        <div class="early-contact-list">
+          ${validUsers.map((d, i) => {
+            const contactVal = d.contact_method === "WhatsApp" ? d.whatsapp : d.messenger;
+            const icon = d.contact_method === "WhatsApp" ? "📱" : "💬";
+            return `
+              <div class="early-contact-item">
+                <span class="ec-name">${escHtml(d.name)}</span>
+                <span class="ec-session">${escHtml(d.session) || "—"}</span>
+                <span class="ec-contact ${d.contact_method === 'WhatsApp' ? 'contact-wa' : 'contact-msg'}">
+                  ${icon} ${escHtml(contactVal)}
+                </span>
+                <button class="btn-message" onclick="openMessageModal(${i})">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                  Message
+                </button>
+              </div>
+            `;
+          }).join("")}
         </div>
-        <button class="btn-message ${isWA ? 'btn-msg-wa' : 'btn-msg-fb'}" onclick="openMessagePopup(${idx}, ${JSON.stringify(d).replace(/"/g,'&quot;')})">
-          ${contactIcon}
-          Message
-        </button>
-      `;
-      listEl.appendChild(item);
-    });
+      </div>
+    `;
+    el.insertAdjacentHTML("beforeend", listHtml);
 
-    listSection.appendChild(listEl);
+    // Store valid users in a data attribute for modal access
+    el.dataset.validUsers = JSON.stringify(validUsers.map(d => ({
+      name: d.name,
+      session: d.session,
+      route: d.route,
+      stoppage: d.stoppage,
+      contact_method: d.contact_method,
+      whatsapp: d.whatsapp,
+      messenger: d.messenger
+    })));
   }
-
-  el.insertAdjacentElement("afterend", listSection);
-  // Clean up previous list sections to avoid duplicates on re-render
-  const existing = el.parentElement.querySelectorAll(".early-contact-list, .early-list-header");
-  // We manage this through the listSection div itself — remove old ones
-  const oldSections = el.parentElement.querySelectorAll(".early-list-section");
-  oldSections.forEach(s => s.remove());
-  listSection.classList.add("early-list-section");
 }
 
-// =============================================
-//  MESSAGE POPUP
-// =============================================
+function hasValidContact(d) {
+  if (!d.name || !d.name.trim()) return false;
+  if (d.contact_method === "WhatsApp")  return !!(d.whatsapp && d.whatsapp.trim());
+  if (d.contact_method === "Messenger") return !!(d.messenger && d.messenger.trim());
+  return false;
+}
 
-window.openMessagePopup = function(idx, person) {
-  const isWA   = person.contact_method === "WhatsApp";
-  const contact = isWA ? person.whatsapp : person.messenger;
+function escHtml(str) {
+  return String(str || "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
+}
 
-  // Build default message
-  const defaultMsg = `হ্যালো ${person.name}! 👋
+// ── Message Modal ──
+window.openMessageModal = function(index) {
+  const statsEl = document.getElementById("early-stats");
+  const users = JSON.parse(statsEl.dataset.validUsers || "[]");
+  const person = users[index];
+  if (!person) return;
 
-আমি DU BUS Commute Project থেকে বলছি।
+  const template = `Hi ${person.name}, thank you for joining the DU BUS Early Access program! 🚌\n\nWe're thrilled to have you as one of our first partners. Your feedback matters a lot to us.\n\nWe will keep you updated on new features and improvements to your commute experience on Route ${person.route || "–"} from ${person.stoppage || "–"}.\n\nLooking forward to your valuable insights!\n\n– DU BUS Team`;
 
-আপনি আমাদের Early Access Partner হিসেবে সাইন আপ করেছেন — অনেক ধন্যবাদ! 🎉
+  const modal = document.getElementById("message-modal");
+  document.getElementById("modal-person-name").textContent    = person.name;
+  document.getElementById("modal-person-session").textContent = person.session || "—";
+  document.getElementById("modal-person-contact").textContent =
+    (person.contact_method === "WhatsApp" ? "📱 " + person.whatsapp : "💬 " + person.messenger);
+  document.getElementById("modal-message-text").value = template;
 
-আপনার তথ্য:
-• রুট: ${person.route || "—"}
-• স্টপেজ: ${person.stoppage || "—"}
-• সেশন: ${person.session || "—"}
-
-আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব নতুন আপডেট ও অফার নিয়ে।
-
-ধন্যবাদ 🙏
-— DU BUS Team`;
-
-  // Remove any existing popup
-  const old = document.getElementById("msg-popup-overlay");
-  if (old) old.remove();
-
-  const overlay = document.createElement("div");
-  overlay.id = "msg-popup-overlay";
-  overlay.className = "msg-popup-overlay";
-  overlay.innerHTML = `
-    <div class="msg-popup">
-      <div class="msg-popup-header">
-        <div class="msg-popup-title">
-          ${isWA
-            ? `<svg viewBox="0 0 24 24" width="18" height="18" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.998 0C5.372 0 0 5.373 0 12.001c0 2.117.554 4.104 1.523 5.832L.057 23.885l6.198-1.424A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12.001C24 5.373 18.627 0 11.998 0zm.002 21.818a9.817 9.817 0 01-5.001-1.369l-.357-.213-3.702.851.882-3.596-.234-.371A9.816 9.816 0 012.18 12c0-5.42 4.4-9.82 9.82-9.82 5.42 0 9.82 4.4 9.82 9.82 0 5.42-4.4 9.818-9.82 9.818z"/></svg> Message via WhatsApp`
-            : `<svg viewBox="0 0 24 24" width="18" height="18" fill="#1877f2"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.99 4.388 10.954 10.125 11.854V15.47H7.078V12h3.047V9.356c0-3.007 1.792-4.669 4.532-4.669 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.874V12h3.328l-.532 3.47h-2.796v8.385C19.612 22.954 24 17.99 24 12c0-6.627-5.373-12-12-12z"/></svg> Message via Messenger`}
-        </div>
-        <button class="msg-popup-close" onclick="closeMessagePopup()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-
-      <div class="msg-popup-to">
-        <span class="msg-to-label">To:</span>
-        <span class="msg-to-name">${person.name}</span>
-        <span class="msg-to-contact ${isWA ? 'contact-wa' : 'contact-msg'}">${contact}</span>
-      </div>
-
-      <div class="msg-popup-body">
-        <label class="msg-label">Message <span class="msg-label-hint">(editable)</span></label>
-        <textarea class="msg-textarea" id="msg-text" rows="12">${defaultMsg}</textarea>
-      </div>
-
-      <div class="msg-popup-footer">
-        <button class="msg-btn-cancel" onclick="closeMessagePopup()">Cancel</button>
-        <button class="msg-btn-send ${isWA ? 'btn-wa' : 'btn-fb'}" onclick="sendMessage('${isWA ? 'wa' : 'fb'}', '${contact.replace(/'/g, "\\'")}')">
-          ${isWA
-            ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.998 0C5.372 0 0 5.373 0 12.001c0 2.117.554 4.104 1.523 5.832L.057 23.885l6.198-1.424A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12.001C24 5.373 18.627 0 11.998 0zm.002 21.818a9.817 9.817 0 01-5.001-1.369l-.357-.213-3.702.851.882-3.596-.234-.371A9.816 9.816 0 012.18 12c0-5.42 4.4-9.82 9.82-9.82 5.42 0 9.82 4.4 9.82 9.82 0 5.42-4.4 9.818-9.82 9.818z"/></svg> Open in WhatsApp`
-            : `<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.99 4.388 10.954 10.125 11.854V15.47H7.078V12h3.047V9.356c0-3.007 1.792-4.669 4.532-4.669 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.874V12h3.328l-.532 3.47h-2.796v8.385C19.612 22.954 24 17.99 24 12c0-6.627-5.373-12-12-12z"/></svg> Open in Messenger`}
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-  // Close on backdrop click
-  overlay.addEventListener("click", e => { if (e.target === overlay) closeMessagePopup(); });
-  // Focus textarea
-  setTimeout(() => document.getElementById("msg-text")?.focus(), 100);
+  // Store person data for "Done" click
+  modal.dataset.personJson = JSON.stringify(person);
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden";
 };
 
-window.closeMessagePopup = function () {
-  const overlay = document.getElementById("msg-popup-overlay");
-  if (overlay) {
-    overlay.classList.add("msg-popup-closing");
-    setTimeout(() => overlay.remove(), 200);
+window.closeMessageModal = function() {
+  const modal = document.getElementById("message-modal");
+  modal.classList.remove("active");
+  document.body.style.overflow = "";
+};
+
+window.sendMessage = function() {
+  const modal = document.getElementById("message-modal");
+  const person = JSON.parse(modal.dataset.personJson || "{}");
+  const text   = document.getElementById("modal-message-text").value;
+
+  closeMessageModal();
+
+  if (person.contact_method === "WhatsApp") {
+    const cleanNum = person.whatsapp.replace(/[\s\-\(\)]/g, "").replace(/^\+/, "").replace(/^0/, "88");
+    window.open(`https://wa.me/${cleanNum}?text=${encodeURIComponent(text)}`, "_blank");
+  } else if (person.contact_method === "Messenger") {
+    window.open(`https://www.messenger.com/t/${encodeURIComponent(person.messenger)}?text=${encodeURIComponent(text)}`, "_blank");
   }
 };
 
-window.sendMessage = function (platform, contact) {
-  const text = document.getElementById("msg-text")?.value || "";
-  const encoded = encodeURIComponent(text);
-
-  let url;
-  if (platform === "wa") {
-    // Strip non-digits from phone number
-    const phone = contact.replace(/\D/g, "");
-    url = `https://wa.me/${phone}?text=${encoded}`;
-  } else {
-    // Messenger: if it's a profile URL use it directly, else open m.me
-    if (contact.startsWith("http")) {
-      url = contact; // Can't auto-paste text for Messenger profile URLs
-    } else {
-      url = `https://m.me/${contact}?text=${encoded}`;
-    }
-  }
-
-  closeMessagePopup();
-  window.open(url, "_blank", "noopener,noreferrer");
-};
+// Close on backdrop click
+document.addEventListener("click", e => {
+  if (e.target.id === "message-modal") closeMessageModal();
+});
 
 // =============================================
 //  SUGGESTIONS
@@ -592,7 +576,7 @@ function renderSuggestions() {
   }
 
   el.innerHTML = suggestions.map(s =>
-    `<span class="suggestion-tag">${s}</span>`
+    `<span class="suggestion-tag">${escHtml(s)}</span>`
   ).join("");
 }
 
@@ -655,7 +639,7 @@ window.renderTable = function () {
 };
 
 // =============================================
-//  EXPORT CSV
+//  CSV EXPORT
 // =============================================
 
 window.exportCSV = function () {
@@ -692,7 +676,7 @@ window.exportCSV = function () {
 };
 
 // =============================================
-//  HELPERS
+//  UTILITIES
 // =============================================
 
 function countBy(arr, key) {
