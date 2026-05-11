@@ -436,21 +436,6 @@ function renderEarlyAccess() {
       <div class="early-card-value">${earlyUsers.length}</div>
       <div class="early-card-sub">${allData.length ? Math.round(earlyUsers.length/allData.length*100) : 0}% of all responses</div>
     </div>
-    <div class="early-card">
-      <div class="early-card-label">Via WhatsApp</div>
-      <div class="early-card-value" style="color:#25d366">${wa}</div>
-      <div class="early-card-sub">Direct number collected</div>
-    </div>
-    <div class="early-card">
-      <div class="early-card-label">Via Messenger</div>
-      <div class="early-card-value" style="color:#1877f2">${msg}</div>
-      <div class="early-card-sub">Facebook profile collected</div>
-    </div>
-    <div class="early-card">
-      <div class="early-card-label">Top Session</div>
-      <div class="early-card-value">${topSession ? topSession[0] : "—"}</div>
-      <div class="early-card-sub">${topSession ? topSession[1] + " partners" : ""}</div>
-    </div>
   `;
 
   if (validUsers.length) {
