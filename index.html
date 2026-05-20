@@ -35,6 +35,35 @@
     <div class="loading-text">Loading responses…</div>
   </div>
 
+  <!-- ── CHAT SUMMARY MODAL ── -->
+  <div class="message-modal" id="chat-summary-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-title">Chat Summary</div>
+          <div class="modal-subtitle">Add or edit a summary of your conversation</div>
+        </div>
+        <button class="modal-close" onclick="closeChatSummaryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-person-info">
+          <div class="modal-person-name" id="cs-modal-name">—</div>
+        </div>
+        <div>
+          <div class="modal-label">Summary (what was discussed, decisions made, follow-ups…)</div>
+          <textarea class="modal-textarea" id="cs-modal-textarea" rows="8" placeholder="Write your chat summary here…"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" onclick="closeChatSummaryModal()">Cancel</button>
+        <button class="btn-modal-send btn-modal-save" onclick="saveChatSummary()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Summary
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── MESSAGE MODAL ── -->
   <div class="message-modal" id="message-modal">
     <div class="modal-box">

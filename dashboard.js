@@ -25,6 +25,9 @@ let allData     = [];
 let filtered    = [];
 let chartColors = ["#e53935","#2196f3","#4caf50","#ffc107","#9c27b0","#ff5722","#009688","#607d8b"];
 
+// Chat summaries keyed by contact value (whatsapp number or messenger id)
+const chatSummaries = {};
+
 
 window.loadData = async function () {
   const btn = document.getElementById("btn-refresh");
@@ -445,17 +448,35 @@ function renderEarlyAccess() {
           ${validUsers.map((d, i) => {
             const contactVal = d.contact_method === "WhatsApp" ? d.whatsapp : d.messenger;
             const icon = d.contact_method === "WhatsApp" ? "📱" : "💬";
+            const summaryKey = escHtml(contactVal);
+            const existingSummary = chatSummaries[contactVal] || "";
             return `
-              <div class="early-contact-item">
+              <div class="early-contact-item" id="ec-item-${i}">
                 <span class="ec-name">${escHtml(d.name)}</span>
                 <span class="ec-session">${escHtml(d.session) || "—"}</span>
                 <span class="ec-contact ${d.contact_method === 'WhatsApp' ? 'contact-wa' : 'contact-msg'}">
                   ${icon} ${escHtml(contactVal)}
                 </span>
-                <button class="btn-message" onclick="openMessageModal(${i})">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                  Message
-                </button>
+                <div class="ec-actions">
+                  <button class="btn-message" onclick="openMessageModal(${i})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    Message
+                  </button>
+                  <button class="btn-chat-summary" onclick="openChatSummary(${i}, '${summaryKey}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Chat Summary
+                  </button>
+                </div>
+                </div>
+                ${existingSummary ? `
+                <div class="ec-summary-display" id="ec-summary-${i}">
+                  <div class="ec-summary-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Chat Summary
+                    <button class="ec-summary-edit" onclick="openChatSummary(${i}, '${escHtml(contactVal)}')">Edit</button>
+                  </div>
+                  <div class="ec-summary-text">${escHtml(existingSummary)}</div>
+                </div>` : `<div class="ec-summary-display" id="ec-summary-${i}" style="display:none;"></div>`}
               </div>
             `;
           }).join("")}
@@ -538,7 +559,70 @@ window.sendMessage = function() {
 // Close on backdrop click
 document.addEventListener("click", e => {
   if (e.target.id === "message-modal") closeMessageModal();
+  if (e.target.id === "chat-summary-modal") closeChatSummaryModal();
 });
+
+// ── Chat Summary Modal ──
+window.openChatSummary = function(index, contactKey) {
+  const modal = document.getElementById("chat-summary-modal");
+  const textarea = document.getElementById("cs-modal-textarea");
+  const existing = chatSummaries[contactKey] || "";
+
+  modal.dataset.index = index;
+  modal.dataset.contactKey = contactKey;
+  textarea.value = existing;
+
+  // Get person name for the modal header
+  const statsEl = document.getElementById("early-stats");
+  const users = JSON.parse(statsEl.dataset.validUsers || "[]");
+  const person = users[index];
+  document.getElementById("cs-modal-name").textContent = person ? person.name : "—";
+
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden";
+  setTimeout(() => textarea.focus(), 100);
+};
+
+window.closeChatSummaryModal = function() {
+  const modal = document.getElementById("chat-summary-modal");
+  modal.classList.remove("active");
+  document.body.style.overflow = "";
+};
+
+window.saveChatSummary = function() {
+  const modal = document.getElementById("chat-summary-modal");
+  const index = parseInt(modal.dataset.index);
+  const contactKey = modal.dataset.contactKey;
+  const text = document.getElementById("cs-modal-textarea").value.trim();
+
+  closeChatSummaryModal();
+
+  if (!text) {
+    // Clear the summary if empty
+    delete chatSummaries[contactKey];
+  } else {
+    chatSummaries[contactKey] = text;
+  }
+
+  // Update the summary display inline without full re-render
+  const summaryEl = document.getElementById(`ec-summary-${index}`);
+  if (summaryEl) {
+    if (text) {
+      summaryEl.style.display = "";
+      summaryEl.innerHTML = `
+        <div class="ec-summary-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Chat Summary
+          <button class="ec-summary-edit" onclick="openChatSummary(${index}, '${escHtml(contactKey)}')">Edit</button>
+        </div>
+        <div class="ec-summary-text">${escHtml(text)}</div>
+      `;
+    } else {
+      summaryEl.style.display = "none";
+      summaryEl.innerHTML = "";
+    }
+  }
+};
 
 // =============================================
 //  SUGGESTIONS
